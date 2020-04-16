@@ -1,0 +1,95 @@
+public class SyncEvent_to_GcalEvent {
+    public void onAfterUpdate(LIST<Event> EventsOld,LIST<Event> EventsNew) {
+        Integer listSize = EventsNew.size();
+        for(Integer i = 0; i < listSize;i++){
+            if( (EventsOld[i].StartDatetime != EventsNew[i].StartDatetime) || (EventsOld[i].EndDateTime != EventsNew[i].EndDateTime) || (EventsOld[i].Subject != EventsNew[i].Subject) || (EventsOld[i].Description  != EventsNew[i].Description) ){
+                String startString = String.valueOf(EventsNew[i].StartDateTime.year())+ '-' + String.valueOf(EventsNew[i].StartDateTime.month()).leftPad(2, '0')+ '-' + String.valueOf(EventsNew[i].StartDateTime.day()).leftPad(2, '0')+ 'T' + String.valueOf(EventsNew[i].StartDateTime.hour()).leftPad(2, '0')+ ':'+ String.valueOf(EventsNew[i].StartDateTime.minute()).leftPad(2, '0')+':00+09:00';
+                String endString = String.valueOf(EventsNew[i].EndDateTime.year())+ '-' + String.valueOf(EventsNew[i].EndDateTime.month()).leftPad(2, '0')+ '-' + String.valueOf(EventsNew[i].EndDateTime.day()).leftPad(2, '0')+ 'T' + String.valueOf(EventsNew[i].EndDateTime.hour()).leftPad(2, '0')+ ':'+ String.valueOf(EventsNew[i].EndDateTime.minute()).leftPad(2, '0')+':00+09:00';
+                String userEmail = EventsNew[i].OwnerEmail__c;
+                String EventID = EventsNew[i].id;
+                String gcalid = '';
+                String Subject = EventsNew[i].Subject;
+                String Description = EventsNew[i].Description;
+                if(EventsNew[i].googleCalEventID__c!=NULL){
+                    gcalid = EventsNew[i].googleCalEventID__c;
+                }
+                sendToGoogle(userEmail,startString,endString,EventID,gcalid,Subject,Description);
+            }
+        }        
+    }
+
+    public void onAfterInsert(LIST<Event> EventsNew) {
+        Integer listSize = EventsNew.size();
+        for(Integer i = 0; i < listSize;i++){
+            if(EventsNew[i].googleCalEventID__c==NULL || EventsNew[i].googleCalEventID__c==''){
+                String startString = String.valueOf(EventsNew[i].StartDateTime.year())+ '-' + String.valueOf(EventsNew[i].StartDateTime.month()).leftPad(2, '0')+ '-' + String.valueOf(EventsNew[i].StartDateTime.day()).leftPad(2, '0')+ 'T' + String.valueOf(EventsNew[i].StartDateTime.hour()).leftPad(2, '0')+ ':'+ String.valueOf(EventsNew[i].StartDateTime.minute()).leftPad(2, '0')+':00+09:00';
+                String endString = String.valueOf(EventsNew[i].EndDateTime.year())+ '-' + String.valueOf(EventsNew[i].EndDateTime.month()).leftPad(2, '0')+ '-' + String.valueOf(EventsNew[i].EndDateTime.day()).leftPad(2, '0')+ 'T' + String.valueOf(EventsNew[i].EndDateTime.hour()).leftPad(2, '0')+ ':'+ String.valueOf(EventsNew[i].EndDateTime.minute()).leftPad(2, '0')+':00+09:00';
+                String userEmail = EventsNew[i].OwnerEmail__c;
+                String EventID = EventsNew[i].id;
+                String gcalid = '';
+                String Subject = EventsNew[i].Subject;
+                String Description = EventsNew[i].Description;
+                if(EventsNew[i].googleCalEventID__c!=NULL){
+                    gcalid = EventsNew[i].googleCalEventID__c;
+                }
+                sendToGoogle(userEmail,startString,endString,EventID,gcalid,Subject,Description);
+            }
+        }   
+    }    
+
+    public void onAfterDelete(LIST<Event> EventsOld) {
+        Integer listSize = EventsOld.size();
+        for(Integer i = 0; i < listSize;i++){
+            String userEmail = EventsOld[i].OwnerEmail__c;
+            String EventID = EventsOld[i].id;
+            String gcalid = '';
+            if(EventsOld[i].googleCalEventID__c!=NULL){
+                gcalid = EventsOld[i].googleCalEventID__c;
+            }
+            sendToGoogleToDelete(userEmail,EventID,gcalid);
+        }   
+    }  
+    
+    @Future(callout=true)
+    public static void sendToGoogle(String userEmail,String startString,String endString,String EventID,String gcalid,String Subject,String Description) {
+        Http http = new Http();
+        HttpRequest req = new HttpRequest();
+
+        // 指定ログイン情報を使用
+        String reqPath;
+        String des = '';
+        if(Description!=NULL){
+            des = Description.replaceAll( '[\\r\\n]+', '<br /> ' );//改行コードを<br />に置換。GoogleAPIのJSONはHTMLを許容する
+        }
+        if(gcalid == ''){
+	        req.setMethod('POST'); 
+	        reqPath = 'callout:GoogleCalendar/calendars/' + userEmail + '/events';
+	        req.setBody('{ "end": {  "dateTime": "' + endString + '" }, "start": {  "dateTime": "' + startString + '" }, "description": "'+ des +'", "summary": "' + Subject +'" }');
+        }else{
+	        req.setMethod('PUT');                    
+	        reqPath = 'callout:GoogleCalendar/calendars/' + userEmail + '/events/' + gcalid;
+	        req.setBody('{ "id": "' + gcalid + '" , "summary": "' + Subject + '", "description": "'+ des +'", "end": {  "dateTime": "' + endString + '" }, "start": {  "dateTime": "' + startString + '" }}');
+        }
+        req.setEndpoint(reqPath);
+        req.setHeader('content-type', 'application/json');
+        HttpResponse res = http.send(req);
+        GoogleCalResponseBodyJSON2Apex obj = GoogleCalResponseBodyJSON2Apex.parse(res.getBody());
+        String objid = obj.id;
+        Event updateEvent = new Event(id = EventID,googleCalEventID__c = objid);
+        update updateEvent;
+    }
+    
+    @Future(callout=true)
+    public static void sendToGoogleToDelete(String userEmail,String EventID,String gcalid) {
+        Http http = new Http();
+        HttpRequest req = new HttpRequest();
+        // 指定ログイン情報を使用
+        String reqPath;
+        req.setMethod('DELETE');                    
+        reqPath = 'callout:GoogleCalendar/calendars/' + userEmail + '/events/' + gcalid;
+        req.setEndpoint(reqPath);
+        req.setHeader('content-type', 'application/json');
+        HttpResponse res = http.send(req);
+    }
+    
+}

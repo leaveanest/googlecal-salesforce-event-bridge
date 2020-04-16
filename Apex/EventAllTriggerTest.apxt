@@ -1,0 +1,52 @@
+@isTest
+private class EventAllTriggerTest {
+    @isTest(Seealldata = TRUE)
+    static void Event_GCalTrrigerTest_test1() {
+		System.debug('01======================開始=========================');
+        LIST<Event> empDays = new LIST<Event>();
+        empDays = [SELECT id,StartDateTime,EndDateTime,OwnerID FROM Event ORDER BY LastModifiedDate DESC LIMIT 1];
+        system.debug('empDays ' + empDays);
+        user you = new user(id = empDays[0].OwnerID);
+        you.IsTsSyncToGoogleCalendar__c = TRUE;
+		update you;        
+        empDays[0].StartDateTime = Datetime.now();
+        empDays[0].EndDateTime = Datetime.now().addMinutes(+5);
+        Test.setMock(HttpCalloutMock.class, new HTTPRequestMock_GoogleCalendar(false));
+        Test.startTest();
+        update empDays[0];
+        Test.stopTest();
+    }
+    @isTest(Seealldata = TRUE)
+    static void Event_GCalTrrigerTest_test2_delete() {
+		System.debug('01======================開始=========================');
+        LIST<Event> empDays = new LIST<Event>();
+        empDays = [SELECT id,StartDateTime,EndDateTime,OwnerID FROM Event ORDER BY LastModifiedDate DESC LIMIT 1];
+        system.debug('empDays ' + empDays);
+        user you = new user(id = empDays[0].OwnerID);
+        you.IsTsSyncToGoogleCalendar__c = TRUE;
+		update you;        
+        empDays[0].StartDateTime = Datetime.now();
+        empDays[0].EndDateTime = Datetime.now().addMinutes(+5);
+        Test.setMock(HttpCalloutMock.class, new HTTPRequestMock_GoogleCalendar(false));
+        Test.startTest();
+        delete empDays[0];
+        Test.stopTest();
+    }
+    @isTest(Seealldata = TRUE)
+    static void Event_GCalTrrigerTest_test3_insert() {
+		System.debug('01======================開始=========================');
+        LIST<Event> empDays = new LIST<Event>();
+        empDays = [SELECT id,StartDateTime,EndDateTime,OwnerID FROM Event ORDER BY LastModifiedDate DESC LIMIT 1];
+        system.debug('empDays ' + empDays);
+        user you = new user(id = empDays[0].OwnerID);
+        you.IsTsSyncToGoogleCalendar__c = TRUE;
+		update you;        
+        empDays[0].StartDateTime = Datetime.now();
+        empDays[0].EndDateTime = Datetime.now().addMinutes(+5);
+        Test.setMock(HttpCalloutMock.class, new HTTPRequestMock_GoogleCalendar(false));
+        Event ins_event = new Event(StartDateTime = empDays[0].StartDateTime, EndDateTime = empDays[0].EndDateTime,OwnerID = empDays[0].OwnerID);
+        Test.startTest();
+        insert ins_event;
+        Test.stopTest();
+    }
+}

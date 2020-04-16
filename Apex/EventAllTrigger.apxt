@@ -1,0 +1,16 @@
+trigger EventAllTrigger on Event (after insert,after update,after delete) {
+    if(Trigger.isAfter){
+        //GoogleCalendarとのSync用
+        //Event_GCalTrrigerより移植
+        SyncEvent_to_GcalEvent handler = new SyncEvent_to_GcalEvent();
+        if (Trigger.isInsert) {
+            handler.onAfterInsert(Trigger.new);
+        }
+        if (Trigger.isUpdate) {
+            handler.onAfterUpdate(Trigger.old,Trigger.new);
+        }
+        if (Trigger.isDelete) {
+            handler.onAfterDelete(Trigger.old);
+        }        
+    }
+}
