@@ -66,11 +66,11 @@ index.php
 ```php index.php```
 と打つと、こんなレスポンスが返ってきます。
 ```Open the following link in your browser:
-https://accounts.google.com/o/oauth2/auth?response_type=code&access_type=offline&client_id=467476291218-c1lh5a69qcubj75j947lorp6r9j8bf0n.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost:8080%index.php&state&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly&prompt=select_account%20consent
+https://accounts.google.com/o/oauth2/auth?response_type=code&access_type=offline&client_id=4674xxxxxxxx8-xxxxxxxxxxxxxxxxxxxxorp6r9j8bf0n.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost:8080%index.php&state&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly&prompt=select_account%20consent
 Enter verification code:
 ```
 書かれている通り、URLをブラウザで開きましょう。この部分です。
-https://accounts.google.com/o/oauth2/auth?response_type=code&access_type=offline&client_id=467476291218-c1lh5a69qcubj75j947lorp6r9j8bf0n.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost:8080%index.php&state&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly&prompt=select_account%20consent
+https://accounts.google.com/o/oauth2/auth?response_type=code&access_type=offline&client_id=46xxxxxx18-cxxxxxxxxxxxxxxxx0n.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost:8080%index.php&state&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar.readonly&prompt=select_account%20consent
 
 これを開くと、GoogleのOAuth画面に行くので自分のGoogleアカウントで開き、Google Calendar APIへのアクセス許可が求められるので承認します。するとこうなります。
 ![localhost.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/22294/704a13a4-c036-bb41-78ab-b5fc1107ef10.png)
@@ -128,4 +128,3 @@ Event.googleCalEventID_c に Googleカレンダーの Event.idが入っている
 ##以上
 GoogleカレンダーとSalesforce側への同期は5分に一度。
 Salesforceのカレンダーの更新はリアルタイムに処理されます。
-
