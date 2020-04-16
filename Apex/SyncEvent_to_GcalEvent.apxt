@@ -75,7 +75,7 @@ public class SyncEvent_to_GcalEvent {
         HttpResponse res = http.send(req);
         GoogleCalResponseBodyJSON2Apex obj = GoogleCalResponseBodyJSON2Apex.parse(res.getBody());
         String objid = obj.id;
-        Event updateEvent = new Event(id = EventID,googleCalEventID__c = objid);
+        Event updateEvent = new Event(id = EventID,googleCalEventID__c = objid,googleCalEventID2__c = userEmail +objid );
         update updateEvent;
     }
     
