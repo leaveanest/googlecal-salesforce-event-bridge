@@ -19,7 +19,7 @@ define('GRANT_TYPE', 'urn:ietf:params:oauth:grant-type:jwt-bearer');
 chdir(dirname(__FILE__));
 function createjwt() {
     $signer = new Sha256();
-    $privateKey = new Key('file://server.key');
+    $privateKey = new Key('file://server.key');//JWT接続設定を行ったときのkeyを読み込む
     $time = time();
     
     $token = (new Builder())->issuedBy(CLIENT_ID) // iss: コンシューマ鍵
@@ -238,7 +238,7 @@ foreach ($emailAndIDs as $line){//ユーザーのEmailを使ってループ
     		$sObject_Event[$recid]->body->EndDateTime = $end;
 		}
 		$sObject_Event[$recid]->body->Subject = $event->getSummary();
-		$sObject_Event[$recid]->body->Description = $event->description;
+		$sObject_Event[$recid]->body->Description = str_replace('<br>','\r\n',$event->description);//カレンダーの改行<br>を改行コードに変換
 		$sObject_Event[$recid]->body->Location = $event->location;
 		$sObject_Event[$recid]->body->WhatId = '0061xxxxxxxxxxxxx';//全員で共有する為に便宜上特定の商談に予定を紐付けてしまっている。不要であればこの行は削除
 		$recid++ ;

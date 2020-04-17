@@ -59,7 +59,7 @@ public class SyncEvent_to_GcalEvent {
         String reqPath;
         String des = '';
         if(Description!=NULL){
-            des = Description.replaceAll( '[\\r\\n]+', '<br /> ' );//改行コードを<br />に置換。GoogleAPIのJSONはHTMLを許容する
+            des = Description.replaceAll( '[\\r\\n]+', '<br> ' );//改行コードを<br>(Googleカレンダーの仕様に合わせる)に置換。GoogleAPIのJSONはHTMLを許容する
         }
         if(gcalid == ''){
 	        req.setMethod('POST'); 
