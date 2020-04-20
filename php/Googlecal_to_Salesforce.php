@@ -237,8 +237,12 @@ foreach ($emailAndIDs as $line){//ユーザーのEmailを使ってループ
 		}else{
     		$sObject_Event[$recid]->body->EndDateTime = $end;
 		}
-		$sObject_Event[$recid]->body->Subject = $event->getSummary();
-		$sObject_Event[$recid]->body->Description = str_replace('<br>','\r\n',$event->description);//カレンダーの改行<br>を改行コードに変換
+        $sObject_Event[$recid]->body->Subject = $event->getSummary();
+        if(strpos($event->description,'</a>') === false){//URLが含まれていない場合は改行コードを変換する
+            $sObject_Event[$recid]->body->Description = str_replace('<br>', '\r\n', $event->description);//カレンダーの改行<br>を改行コードに変換
+        }else{
+            $sObject_Event[$recid]->body->Description = str_replace('<br>', ' ', $event->description);//カレンダーの改行<br>をスペース変換(URL含む場合は改行する方法が無い)
+        }
 		$sObject_Event[$recid]->body->Location = $event->location;
 		$sObject_Event[$recid]->body->WhatId = '0061xxxxxxxxxxxxx';//全員で共有する為に便宜上特定の商談に予定を紐付けてしまっている。不要であればこの行は削除
 		$recid++ ;
