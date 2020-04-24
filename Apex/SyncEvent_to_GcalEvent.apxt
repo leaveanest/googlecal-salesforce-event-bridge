@@ -61,12 +61,12 @@ public class SyncEvent_to_GcalEvent {
         if(Description!=NULL){
             des = Description.replaceAll( '[\\r\\n]+', '<br> ' );//改行コードを<br>(Googleカレンダーの仕様に合わせる)に置換。GoogleAPIのJSONはHTMLを許容する
         }
+        req.setMethod('POST'); 
         if(gcalid == ''){
-	        req.setMethod('POST'); 
 	        reqPath = 'callout:GoogleCalendar/calendars/' + userEmail + '/events';
 	        req.setBody('{ "end": {  "dateTime": "' + endString + '" }, "start": {  "dateTime": "' + startString + '" }, "description": "'+ des +'", "summary": "' + Subject +'" }');
         }else{
-	        req.setMethod('PUT');                    
+	        rreq.setHeader('X-HTTP-Method-Override','PATCH');                 
 	        reqPath = 'callout:GoogleCalendar/calendars/' + userEmail + '/events/' + gcalid;
 	        req.setBody('{ "id": "' + gcalid + '" , "summary": "' + Subject + '", "description": "'+ des +'", "end": {  "dateTime": "' + endString + '" }, "start": {  "dateTime": "' + startString + '" }}');
         }
