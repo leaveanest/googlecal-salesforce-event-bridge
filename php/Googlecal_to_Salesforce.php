@@ -254,6 +254,6 @@ foreach ($emailAndIDs as $line){//ユーザーのEmailを使ってループ
 
 // SFへのUPdateここから
 $arr = array_chunk($sObject_Event,25);//25件以上一度に処理できない
-for($arc = 0;$arc <= count($arr);$arc++){
+for($arc = 0;$arc < count($arr);$arc++){
     $SF_upsert_response = eventsUpsert($accinfo,$arr[$arc]);
 }
