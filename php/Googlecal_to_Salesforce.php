@@ -244,7 +244,6 @@ foreach ($emailAndIDs as $line){//ユーザーのEmailを使ってループ
             $sObject_Event[$recid]->body->Description = str_replace('<br>', ' ', $event->description);//カレンダーの改行<br>をスペース変換(URL含む場合は改行する方法が無い)
         }
 		$sObject_Event[$recid]->body->Location = $event->location;
-		$sObject_Event[$recid]->body->WhatId = '0061xxxxxxxxxxxxx';//全員で共有する為に便宜上特定の商談に予定を紐付けてしまっている。不要であればこの行は削除
 		$recid++ ;
 	  }
 	}
