@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  gcaltosf:
+    build: .
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8080:80"
+    restart: always

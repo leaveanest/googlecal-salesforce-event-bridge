@@ -1,0 +1,7 @@
+{
+    "require": {
+        "lcobucci/jwt": "^4.0",
+        "google/apiclient": "^2.0",
+        "vlucas/phpdotenv": "^5.6"
+    }
+}

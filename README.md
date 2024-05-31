@@ -37,6 +37,10 @@ PHPから使いますので、こちらをインストールします。
 - Google APIs Client Library for PHPをインストールする
 - $ composer require google/apiclient:"^2.0"
 
+cd docker
+docker-compose build
+docker-compose up -d 
+docker-compose exec gcaltosf php /usr/src/app/Googlecal_to_Salesforce.php
 
 ### Google APIsで新規プロジェクトを作成
 こちらから：https://console.developers.google.com/apis/
