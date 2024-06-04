@@ -1,5 +1,12 @@
 <?php
 
+require_once 'vendor/autoload.php';
+
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
@@ -7,46 +14,50 @@ use Lcobucci\JWT\Signer\Rsa\Sha256;
 // 本番: https://login.salesforce.com
 // Sandbox: https://test.login.salesforce.com
 // スクラッチ組織: https://test.saleforce.com
-define('LOGIN_URL', 'https://login.salesforce.com');
+// define('LOGIN_URL', 'https://login.salesforce.com');
 // 認証URL
-define('AUTH_URL', LOGIN_URL . '/services/oauth2/token');
+// define('AUTH_URL', LOGIN_URL . '/services/oauth2/token');
 // コンシューマ鍵
-define('CLIENT_ID', '3MVG9xxxxxxxxxxxxxxxxxxxxxxxx');//接続アプリのID
+// define('CLIENT_ID', '3MVG9xxxxxxxxxxxxxxxxxxxxxxxx'); //接続アプリのID
 // ユーザID
-define('USER_ID', 'y@lne.st');//ログインユーザを指定する
+// define('USER_ID', 'y@lne.st'); //ログインユーザを指定する
 // 認証タイプ
+
 define('GRANT_TYPE', 'urn:ietf:params:oauth:grant-type:jwt-bearer');
+define('AUTH_URL', $_ENV['LOGIN_URL'] . '/services/oauth2/token');
 chdir(dirname(__FILE__));
-function createjwt() {
+function createjwt()
+{
     $signer = new Sha256();
-    $privateKey = new Key('file://server.key');//JWT接続設定を行ったときのkeyを読み込む
+    $privateKey = new Key('file://server.key'); //JWT接続設定を行ったときのkeyを読み込む
     $time = time();
-    
-    $token = (new Builder())->issuedBy(CLIENT_ID) // iss: コンシューマ鍵
-                            ->permittedFor(LOGIN_URL) // aud: SalesforceログインURL
-                            ->relatedTo(USER_ID) // sub: SalesforceユーザID
-                            ->expiresAt($time + 3 * 60) // exp: 3分以内
-                            ->getToken($signer,  $privateKey);
+
+    $token = (new Builder())->issuedBy($_ENV['CLIENT_ID']) // iss: コンシューマ鍵
+        ->permittedFor($_ENV['LOGIN_URL']) // aud: SalesforceログインURL
+        ->relatedTo($_ENV['USER_ID']) // sub: SalesforceユーザID
+        ->expiresAt($time + 3 * 60) // exp: 3分以内
+        ->getToken($signer,  $privateKey);
     return $token;
 }
-function auth() {
+function auth()
+{
     $jwt = createjwt();
     $post = array(
         'grant_type' => GRANT_TYPE,
         'assertion' => $jwt,
     );
     $curl = curl_init();
-    curl_setopt( $curl, CURLOPT_URL, AUTH_URL );
-    curl_setopt( $curl, CURLOPT_RETURNTRANSFER, 1 );
-    curl_setopt( $curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_2);
-    curl_setopt( $curl, CURLOPT_POSTFIELDS, $post );
-    $buf = curl_exec( $curl );
-    if ( curl_errno( $curl ) ) {
+    curl_setopt($curl, CURLOPT_URL, AUTH_URL);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_2);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $post);
+    $buf = curl_exec($curl);
+    if (curl_errno($curl)) {
         exit;
     }
-    curl_close( $curl );
-    
-    $json = json_decode( $buf );
+    curl_close($curl);
+
+    $json = json_decode($buf);
     $accinfo = array(
         // アクセスするためのURL
         'instance_url' => $json->instance_url,
@@ -56,8 +67,9 @@ function auth() {
     return $accinfo;
 }
 
-function getuserfromsf($accinfo){
-    $query = "select email,id from User WHERE isActive = TRUE";//有効なユーザを取得するSOQL
+function getuserfromsf($accinfo)
+{
+    $query = "select email,id from User WHERE isActive = TRUE"; //有効なユーザを取得するSOQL
     $url = $accinfo['instance_url'] . "/services/data/v47.0/query?q="  . urlencode($query);
     $header = array(
         'Content-Type: application/json;charset=UTF-8',
@@ -69,7 +81,7 @@ function getuserfromsf($accinfo){
     curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
     curl_setopt($curl, CURLOPT_GET, true);
     curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_2);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true );
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_VERBOSE, true);
     $response = json_decode(curl_exec($curl), true);
     curl_close($curl);
@@ -79,7 +91,8 @@ function getuserfromsf($accinfo){
 $accinfo = auth();
 $response = getuserfromsf($accinfo);
 
-function eventsUpsert($accinfo,$sObject_Event){
+function eventsUpsert($accinfo, $sObject_Event)
+{
     $url = $accinfo['instance_url'] . "/services/data/v47.0/composite/";
     $header = array(
         'Content-Type: application/json;charset=UTF-8',
@@ -90,22 +103,22 @@ function eventsUpsert($accinfo,$sObject_Event){
     curl_setopt($curl, CURLOPT_URL, $url);
     curl_setopt($curl, CURLOPT_HEADER, false);
     curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-    $to_json_records -> compositeRequest = $sObject_Event;
+    $to_json_records->compositeRequest = $sObject_Event;
     curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($to_json_records));
     curl_setopt($curl, CURLOPT_POST, true);
     curl_setopt($curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_2);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true );
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_VERBOSE, true);
     $response = json_decode(curl_exec($curl), true);
-    curl_close($curl);    
+    curl_close($curl);
     return $response;
 }
 
-$emailAndIDs = [];//EmailとSalesforceのUseridの配列
-foreach($response['records'] as $record){
-    if(!empty($record['Email'])){
-        $userid = array($record['Email']=>$record['Id']);
-        $emailAndIDs = array_merge($emailAndIDs,$userid);
+$emailAndIDs = []; //EmailとSalesforceのUseridの配列
+foreach ($response['records'] as $record) {
+    if (!empty($record['Email'])) {
+        $userid = array($record['Email'] => $record['Id']);
+        $emailAndIDs = array_merge($emailAndIDs, $userid);
     }
 }
 
@@ -118,7 +131,7 @@ function getGoogleClient()
 {
     $google_client = new Google_Client();
     $google_client->setApplicationName('G Suite Directory API PHP Quickstart');
-    $google_client->setScopes([//scope変更するときはtoken.jsonを削除すればやり直せる
+    $google_client->setScopes([ //scope変更するときはtoken.jsonを削除すればやり直せる
         Google_Service_Directory::ADMIN_DIRECTORY_USER_READONLY,
         Google_Service_Calendar::CALENDAR_READONLY
     ]);
@@ -174,85 +187,85 @@ $uid = 0;
 $updateEvents = array();
 $recid = 0;
 $sObject_Event[] = new stdclass();
-foreach ($emailAndIDs as $line){//ユーザーのEmailを使ってループ
-	$calendarId = array_keys($emailAndIDs)[$uid];
-	$OwnerId = array_values($emailAndIDs)[$uid];
-	if($calendarId){
-	    $optParams = array(
-	        //一度に取得するカレンダー情報量。最大2500
+foreach ($emailAndIDs as $line) { //ユーザーのEmailを使ってループ
+    $calendarId = array_keys($emailAndIDs)[$uid];
+    $OwnerId = array_values($emailAndIDs)[$uid];
+    if ($calendarId) {
+        $optParams = array(
+            //一度に取得するカレンダー情報量。最大2500
             'maxResults' => 2500,
-	        //更新時間順に取得する(古い順)ただし、updateMinの所で過去5分以内の更新のみ取得するように制限してある
+            //更新時間順に取得する(古い順)ただし、updateMinの所で過去5分以内の更新のみ取得するように制限してある
             'orderBy' => 'updated',
-    	    //更新時間5分以内のレコードを取得する
-	        'updatedMin' => date('c',strtotime( "-5 min" )),
-    	);
-	$results = $service->events->listEvents($calendarId, $optParams);
-	$uid++ ;
+            //更新時間5分以内のレコードを取得する
+            'updatedMin' => date('c', strtotime("-5 min")),
+        );
+        $results = $service->events->listEvents($calendarId, $optParams);
+        $uid++;
 
 
-	if (count($results->getItems()) == 0) {
-	  print "No upcoming events found.\n";
-	} else {
-	  foreach ($results->getItems() as $event) {
-	    $id = $event->id;
-		$email = $calendarId;
-		$gcaluID = $email.$id;
-		if(empty($event->end->dateTime)){
-			$endDate = $event->end->date;
-		}else{
-            $end = $event->end->dateTime;
-		}
-		if(empty($event->start->dateTime)){
-		    $startDate = $event->start->date;
-		    $allDayDuration = (strtotime($endDate) - strtotime($startDate))/ ( 60 );
-		}else{
-		    $start = $event->start->dateTime;
-		}
-		$attendeesOmitted = $event->attendeesOmitted;
-	    $status = $event->status;
-		$org = $event->organizer->email;
-		//招待イベントの時の処理を書く
-		if($calendarId !== $org){
-			$ischild = "TRUE";
-			}else{
-			$ischild = "FALSE";
-		}
-		$sObject_Event[$recid]->referenceId = $id;
-        if ($attendeesOmitted == true || $status == 'cancelled') {
-            $sObject_Event[$recid]->method = "DELETE";
-        }else{
-            $sObject_Event[$recid]->method = "PATCH";
+        if (count($results->getItems()) == 0) {
+            print "No upcoming events found.\n";
+        } else {
+            foreach ($results->getItems() as $event) {
+                $id = $event->id;
+                $email = $calendarId;
+                $gcaluID = $email . $id;
+                if (empty($event->end->dateTime)) {
+                    $endDate = $event->end->date;
+                } else {
+                    $end = $event->end->dateTime;
+                }
+                if (empty($event->start->dateTime)) {
+                    $startDate = $event->start->date;
+                    $allDayDuration = (strtotime($endDate) - strtotime($startDate)) / (60);
+                } else {
+                    $start = $event->start->dateTime;
+                }
+                $attendeesOmitted = $event->attendeesOmitted;
+                $status = $event->status;
+                $org = $event->organizer->email;
+                //招待イベントの時の処理を書く
+                if ($calendarId !== $org) {
+                    $ischild = "TRUE";
+                } else {
+                    $ischild = "FALSE";
+                }
+                $sObject_Event[$recid]->referenceId = $id;
+                if ($attendeesOmitted == true || $status == 'cancelled') {
+                    $sObject_Event[$recid]->method = "DELETE";
+                } else {
+                    $sObject_Event[$recid]->method = "PATCH";
+                }
+                $sObject_Event[$recid]->url = "/services/data/v47.0/sobjects/Event/googleCalEventID2__c/" . $gcaluID; //外部IDにgoogleCalEventID2__cを利用
+                $sObject_Event[$recid]->body->googleCalEventID__c = $id;
+                $sObject_Event[$recid]->body->OWNERID = $OwnerId;
+                if (empty($start)) {
+                    $sObject_Event[$recid]->body->ActivityDate = $startDate;
+                    $sObject_Event[$recid]->body->IsAllDayEvent = true;
+                    $sObject_Event[$recid]->body->DurationInMinutes = $allDayDuration;
+                } else {
+                    $sObject_Event[$recid]->body->StartDateTime = $start;
+                }
+                if (empty($end)) {
+                } else {
+                    $sObject_Event[$recid]->body->EndDateTime = $end;
+                }
+                $sObject_Event[$recid]->body->Subject = $event->getSummary();
+                if (strpos($event->description, '</a>') === false) { //URLが含まれていない場合は改行コードを変換する
+                    $sObject_Event[$recid]->body->Description = str_replace('<br>', '\r\n', $event->description); //カレンダーの改行<br>を改行コードに変換
+                } else {
+                    $sObject_Event[$recid]->body->Description = str_replace('<br>', ' ', $event->description); //カレンダーの改行<br>をスペース変換(URL含む場合は改行する方法が無い)
+                }
+                $sObject_Event[$recid]->body->Location = $event->location;
+                $sObject_Event[$recid]->body->IsChild__c = $ischild; // 追加: 主催者かどうかを示すカスタム項目に設定
+                $recid++;
+            }
         }
-		$sObject_Event[$recid]->url = "/services/data/v47.0/sobjects/Event/googleCalEventID2__c/".$gcaluID;//外部IDにgoogleCalEventID2__cを利用
-		$sObject_Event[$recid]->body->googleCalEventID__c = $id;
-		$sObject_Event[$recid]->body->OWNERID = $OwnerId;
-		if(empty($start)) {
-            $sObject_Event[$recid]->body->ActivityDate = $startDate;
-            $sObject_Event[$recid]->body->IsAllDayEvent = true;
-            $sObject_Event[$recid]->body->DurationInMinutes = $allDayDuration;
-		}else{
-    		$sObject_Event[$recid]->body->StartDateTime = $start;
-		}
-		if(empty($end)) {
-		}else{
-    		$sObject_Event[$recid]->body->EndDateTime = $end;
-		}
-        $sObject_Event[$recid]->body->Subject = $event->getSummary();
-        if(strpos($event->description,'</a>') === false){//URLが含まれていない場合は改行コードを変換する
-            $sObject_Event[$recid]->body->Description = str_replace('<br>', '\r\n', $event->description);//カレンダーの改行<br>を改行コードに変換
-        }else{
-            $sObject_Event[$recid]->body->Description = str_replace('<br>', ' ', $event->description);//カレンダーの改行<br>をスペース変換(URL含む場合は改行する方法が無い)
-        }
-		$sObject_Event[$recid]->body->Location = $event->location;
-		$recid++ ;
-	  }
-	}
-
     }
 }
 
 // SFへのUPdateここから
-$arr = array_chunk($sObject_Event,25);//25件以上一度に処理できない
-for($arc = 0;$arc < count($arr);$arc++){
-    $SF_upsert_response = eventsUpsert($accinfo,$arr[$arc]);
+$arr = array_chunk($sObject_Event, 25); //25件以上一度に処理できない
+for ($arc = 0; $arc < count($arr); $arc++) {
+    $SF_upsert_response = eventsUpsert($accinfo, $arr[$arc]);
 }
